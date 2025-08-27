@@ -1,81 +1,103 @@
+import LoginPage from "../pages/loginPage";
+
 describe('OrangeHRM Login Tests', () => {
 
+  // beforeEach(() => {
+  //   cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
+  // });
+
   beforeEach(() => {
-    cy.visit('https://opensource-demo.orangehrmlive.com/web/index.php/auth/login');
+    cy.intercept("POST", "**/auth/validate*").as("loginRequest");
   });
 
   it('TC_001 - Login dengan username dan password valid', () => {
-    cy.get('input[name="username"]').type('Admin');
-    cy.get('input[name="password"]').type('admin123');
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.enterUsername("Admin");
+    LoginPage.enterPassword("admin123");
+    LoginPage.clickLogin();
 
-    cy.url().should('include', '/dashboard'); // berhasil login
+    cy.wait('@loginRequest').its('response.statusCode').should('eq', 302);
+
+    LoginPage.assertDashboard();
   });
 
   it('TC_002 - Login dengan username salah dan password benar', () => {
-    cy.get('input[name="username"]').type('Adminn');
-    cy.get('input[name="password"]').type('admin123');
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.enterUsername("wrongpass");
+    LoginPage.enterPassword("admin123");
+    LoginPage.clickLogin();
 
-    cy.contains('Invalid credentials').should('be.visible');
+    cy.wait('@loginRequest').its('response.statusCode').should('eq', 302);
+
+    LoginPage.assertErrorMessage();
   });
 
   it('TC_003 - Login dengan username benar dan password salah', () => {
-    cy.get('input[name="username"]').type('Admin');
-    cy.get('input[name="password"]').type('admin1234');
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.enterUsername("Admin");
+    LoginPage.enterPassword("admin1234");
+    LoginPage.clickLogin();
 
-    cy.contains('Invalid credentials').should('be.visible');
+    cy.wait('@loginRequest').its('response.statusCode').should('eq', 302);
+
+    LoginPage.assertErrorMessage();
   });
 
   it('TC_004 - Login dengan username salah dan password salah', () => {
-    cy.get('input[name="username"]').type('Adminn');
-    cy.get('input[name="password"]').type('admin1234');
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.enterUsername("Adminn");
+    LoginPage.enterPassword("admin1234");
+    LoginPage.clickLogin();
 
-    cy.contains('Invalid credentials').should('be.visible');
+    cy.wait('@loginRequest').its('response.statusCode').should('eq', 302);
+
+    LoginPage.assertErrorMessage();
   });
 
   it('TC_005 - Login dengan username kosong dan password valid', () => {
-    cy.get('input[name="password"]').type('admin123');
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.enterPassword("admin123");
+    LoginPage.clickLogin();
 
-    cy.get('.oxd-input-group > .oxd-text').should('contain', 'Required');
+    LoginPage.assertErrorRequired();
   });
 
   it('TC_006 - Login dengan username valid dan password kosong', () => {
-    cy.get('input[name="username"]').type('Admin');
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.enterUsername("Admin");
+    LoginPage.clickLogin();
 
-    cy.get('.oxd-input-group > .oxd-text').should('contain', 'Required');
+    LoginPage.assertErrorRequired();
   });
 
   it('TC_007 - Login dengan username dan password kosong', () => {
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.clickLogin();
 
-    cy.get('.oxd-input-group > .oxd-text').should('contain', 'Required');
+    LoginPage.assertErrorRequired();
   });
 
   it('TC_008 - Login dengan spasi di username', () => {
-    cy.get('input[name="username"]').type(' Admin ');
-    cy.get('input[name="password"]').type('admin123');
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.enterUsername(" Admin");
+    LoginPage.enterPassword("admin123");
+    LoginPage.clickLogin();
 
-    cy.contains('Invalid credentials').should('be.visible');
+    LoginPage.assertErrorMessage();
   });
 
   it('TC_009 - Login dengan username/password yang salah berulang kali', () => {
-    cy.get('input[name="username"]').type('Admin');
-    cy.get('input[name="password"]').type('123');
-    cy.get('button[type="submit"]').click();
+    LoginPage.visit();
+    LoginPage.enterUsername("Adminn");
+    LoginPage.enterPassword("admin1223");
+    LoginPage.clickLogin();
 
-    cy.contains('Invalid credentials').should('be.visible');
+    LoginPage.assertErrorMessage();
   });
 
   it('TC_010 - Klik Forget Your Password', () => {
-    cy.contains('Forgot your password?').click();
-
-    cy.url().should('include', '/requestPasswordResetCode');
+    LoginPage.visit();
+    LoginPage.clickForgot();
   });
 
 });
